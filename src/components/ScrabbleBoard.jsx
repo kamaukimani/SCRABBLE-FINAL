@@ -117,39 +117,99 @@ function ScrabbleBoard({ board, setBoard }) {
 export default ScrabbleBoard;
 */}
 
+// import React from 'react';
+// import './scrabble-style.css';
+
+// function ScrabbleBoard({ board, setBoard, selectedTile, setSelectedTile, players, setPlayers, currentPlayerIndex }) {
+//   const handleCellClick = (rowIndex, colIndex) => {
+//     if (!selectedTile || board[rowIndex][colIndex].tile) return;
+
+//     const newBoard = [...board];
+//     newBoard[rowIndex][colIndex] = {
+//       ...newBoard[rowIndex][colIndex],
+//       tile: { letter: selectedTile }
+//     };
+//     setBoard(newBoard);
+
+//     const newPlayers = [...players];
+//     newPlayers[currentPlayerIndex].rack = newPlayers[currentPlayerIndex].rack.filter(t => t !== selectedTile);
+//     setPlayers(newPlayers);
+
+//     setSelectedTile(null);
+//   };
+
+//   return (
+//     <div className="board">
+//       {board.map((row, rowIndex) =>
+//         row.map((cell, colIndex) => (
+//           <div
+//             key={`${rowIndex}-${colIndex}`}
+//             className={`cell ${cell.bonus || ''}`}
+//             onClick={() => handleCellClick(rowIndex, colIndex)}
+//           >
+//             {cell.tile?.letter || cell.bonus}
+//           </div>
+//         ))
+//       )}
+//     </div>
+//   );
+// }
+
+// export default ScrabbleBoard;
 import React from 'react';
 import './scrabble-style.css';
 
-function ScrabbleBoard({ board, setBoard, selectedTile, setSelectedTile, players, setPlayers, currentPlayerIndex }) {
+function ScrabbleBoard({
+  board,
+  setBoard,
+  selectedTile,
+  setSelectedTile,
+  players,
+  setPlayers,
+  currentPlayerIndex,
+  placedTiles,
+  setPlacedTiles
+}) {
   const handleCellClick = (rowIndex, colIndex) => {
     if (!selectedTile || board[rowIndex][colIndex].tile) return;
 
     const newBoard = [...board];
     newBoard[rowIndex][colIndex] = {
       ...newBoard[rowIndex][colIndex],
-      tile: { letter: selectedTile }
+      tile: selectedTile
     };
     setBoard(newBoard);
 
     const newPlayers = [...players];
-    newPlayers[currentPlayerIndex].rack = newPlayers[currentPlayerIndex].rack.filter(t => t !== selectedTile);
+    newPlayers[currentPlayerIndex].rack = newPlayers[currentPlayerIndex].rack.filter(
+      t => t !== selectedTile
+    );
     setPlayers(newPlayers);
 
+    setPlacedTiles(prev => [...prev, { row: rowIndex, col: colIndex, tile: selectedTile }]);
     setSelectedTile(null);
   };
 
   return (
     <div className="board">
       {board.map((row, rowIndex) =>
-        row.map((cell, colIndex) => (
-          <div
-            key={`${rowIndex}-${colIndex}`}
-            className={`cell ${cell.bonus || ''}`}
-            onClick={() => handleCellClick(rowIndex, colIndex)}
-          >
-            {cell.tile?.letter || cell.bonus}
-          </div>
-        ))
+        row.map((cell, colIndex) => {
+          const isCenter = rowIndex === 7 && colIndex === 7;
+          const hasTile = !!cell.tile;
+          return (
+            <div
+              key={`${rowIndex}-${colIndex}`}
+              className={`cell ${cell.bonus || ''}`}
+              onClick={() => handleCellClick(rowIndex, colIndex)}
+            >
+              {hasTile
+                ? cell.tile.letter
+                : isCenter
+                ? '★'
+                : cell.bonus || ''}
+            </div>
+          );
+        })
       )}
     </div>
   );

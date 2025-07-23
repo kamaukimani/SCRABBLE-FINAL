@@ -282,11 +282,132 @@ function Game() {
 
 export default Game;
 \*/}
+// import React, { useState, useEffect } from 'react';
+// import ScrabbleBoard from '../components/ScrabbleBoard';
+// import TileRack from '../components/TileRack';
+// import WordValidator from '../components/WordValidator';
+// import generateBag from '../components/TileBag';
+// import '../components/scrabble-style.css';
+
+// const BONUS_TEMPLATE = [
+//   ["TW", "", "", "DL", "", "", "", "TW", "", "", "", "DL", "", "", "TW"],
+//   ["", "DW", "", "", "", "TL", "", "", "", "TL", "", "", "", "DW", ""],
+//   ["", "", "DW", "", "", "", "DL", "", "DL", "", "", "", "DW", "", ""],
+//   ["DL", "", "", "DW", "", "", "", "DL", "", "", "", "DW", "", "", "DL"],
+//   ["", "", "", "", "DW", "", "", "", "", "", "DW", "", "", "", ""],
+//   ["", "TL", "", "", "", "TL", "", "", "", "TL", "", "", "", "TL", ""],
+//   ["", "", "DL", "", "", "", "DL", "", "DL", "", "", "", "DL", "", ""],
+//   ["TW", "", "", "DL", "", "", "", "DW", "", "", "", "DL", "", "", "TW"],
+//   ["", "", "DL", "", "", "", "DL", "", "DL", "", "", "", "DL", "", ""],
+//   ["", "TL", "", "", "", "TL", "", "", "", "TL", "", "", "", "TL", ""],
+//   ["", "", "", "", "DW", "", "", "", "", "", "DW", "", "", "", ""],
+//   ["DL", "", "", "DW", "", "", "", "DL", "", "", "", "DW", "", "", "DL"],
+//   ["", "", "DW", "", "", "", "DL", "", "DL", "", "", "", "DW", "", ""],
+//   ["", "DW", "", "", "", "TL", "", "", "", "TL", "", "", "", "DW", ""],
+//   ["TW", "", "", "DL", "", "", "", "TW", "", "", "", "DL", "", "", "TW"]
+// ];
+
+// const generateEmptyBoard = () => {
+//   return BONUS_TEMPLATE.map(row =>
+//     row.map(bonus => ({
+//       tile: null,
+//       bonus: bonus || null
+//     }))
+//   );
+// };
+
+// const initialPlayers = [
+//   { name: 'User1', score: 0, rack: [] },
+//   { name: 'User2', score: 0, rack: [] }
+// ];
+
+// function Game() {
+//   const [players, setPlayers] = useState(initialPlayers);
+//   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+//   const [board, setBoard] = useState(generateEmptyBoard());
+//   const [tileBag, setTileBag] = useState(generateBag());
+//   const [wordScore, setWordScore] = useState(0);
+//   const [selectedTile, setSelectedTile] = useState(null);
+
+//   const currentPlayer = players[currentPlayerIndex];
+
+//   useEffect(() => {
+//     setPlayers(prevPlayers =>
+//       prevPlayers.map(player => ({
+//         ...player,
+//         rack: tileBag.splice(0, 7)
+//       }))
+//     );
+//     setTileBag([...tileBag]);
+//   }, []);
+
+//   useEffect(() => {
+//     document.title = `${currentPlayer.name}'s Turn | Scrabble`;
+//   }, [currentPlayerIndex]);
+
+//   const handlePass = () => {
+//     setSelectedTile(null);
+//     setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+//   };
+
+//   return (
+//     <div className="game-container">
+//       <div>
+//         <ScrabbleBoard
+//           board={board}
+//           setBoard={setBoard}
+//           selectedTile={selectedTile}
+//           setSelectedTile={setSelectedTile}
+//           players={players}
+//           setPlayers={setPlayers}
+//           currentPlayerIndex={currentPlayerIndex}
+//         />
+//         <TileRack
+//           player={currentPlayer}
+//           selectedTile={selectedTile}
+//           setSelectedTile={setSelectedTile}
+//         />
+//       </div>
+
+//       <div className="sidebar">
+//         <h2>{currentPlayer.name}'s Turn</h2>
+//         <p>Score: {currentPlayer.score}</p>
+//         <p>Word Score: {wordScore}</p>
+//         <p>Timer: 00:00</p>
+
+//         <WordValidator
+//           board={board}
+//           currentPlayer={currentPlayer}
+//           setPlayers={setPlayers}
+//           currentPlayerIndex={currentPlayerIndex}
+//           setCurrentPlayerIndex={setCurrentPlayerIndex}
+//           setWordScore={setWordScore}
+//         >
+//           {({ playWord }) => (
+//             <button className="play-button" onClick={playWord}>Play word</button>
+//           )}
+//         </WordValidator>
+
+//         <button className="pass-button" onClick={handlePass}>PASS</button>
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default Game;
+
+
 import React, { useState, useEffect } from 'react';
 import ScrabbleBoard from '../components/ScrabbleBoard';
 import TileRack from '../components/TileRack';
 import WordValidator from '../components/WordValidator';
-import generateBag from '../components/TileBag';
+import {
+  createTileBag,
+  refillRack,
+  extractWordFromBoard,
+  isValidPlacement,
+  calculateWordScore
+} from '../components/TileBag';
 import '../components/scrabble-style.css';
 
 const BONUS_TEMPLATE = [
@@ -311,44 +432,37 @@ const generateEmptyBoard = () => {
   return BONUS_TEMPLATE.map(row =>
     row.map(bonus => ({
       tile: null,
-      bonus: bonus || null
+      bonus,
+      originallyOccupied: false
     }))
   );
 };
 
 const initialPlayers = [
-  { name: 'User1', score: 0, rack: [] },
-  { name: 'User2', score: 0, rack: [] }
+  { name: 'Player 1', score: 0, rack: [] },
+  { name: 'Player 2', score: 0, rack: [] }
 ];
 
 function Game() {
   const [players, setPlayers] = useState(initialPlayers);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [board, setBoard] = useState(generateEmptyBoard());
-  const [tileBag, setTileBag] = useState(generateBag());
+  const [tileBag, setTileBag] = useState(createTileBag());
   const [wordScore, setWordScore] = useState(0);
   const [selectedTile, setSelectedTile] = useState(null);
+  const [placedTiles, setPlacedTiles] = useState([]);
 
   const currentPlayer = players[currentPlayerIndex];
 
   useEffect(() => {
-    setPlayers(prevPlayers =>
-      prevPlayers.map(player => ({
-        ...player,
-        rack: tileBag.splice(0, 7)
-      }))
-    );
-    setTileBag([...tileBag]);
+    const [rack1, bagAfter1] = refillRack(players[0], tileBag);
+    const [rack2, bagAfter2] = refillRack(players[1], bagAfter1);
+    setPlayers([
+      { ...players[0], rack: rack1 },
+      { ...players[1], rack: rack2 }
+    ]);
+    setTileBag(bagAfter2);
   }, []);
-
-  useEffect(() => {
-    document.title = `${currentPlayer.name}'s Turn | Scrabble`;
-  }, [currentPlayerIndex]);
-
-  const handlePass = () => {
-    setSelectedTile(null);
-    setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
-  };
 
   return (
     <div className="game-container">
@@ -361,6 +475,8 @@ function Game() {
           players={players}
           setPlayers={setPlayers}
           currentPlayerIndex={currentPlayerIndex}
+          placedTiles={placedTiles}
+          setPlacedTiles={setPlacedTiles}
         />
         <TileRack
           player={currentPlayer}
@@ -373,7 +489,6 @@ function Game() {
         <h2>{currentPlayer.name}'s Turn</h2>
         <p>Score: {currentPlayer.score}</p>
         <p>Word Score: {wordScore}</p>
-        <p>Timer: 00:00</p>
 
         <WordValidator
           board={board}
@@ -382,13 +497,27 @@ function Game() {
           currentPlayerIndex={currentPlayerIndex}
           setCurrentPlayerIndex={setCurrentPlayerIndex}
           setWordScore={setWordScore}
+          tileBag={tileBag}
+          setTileBag={setTileBag}
+          placedTiles={placedTiles}
+          setPlacedTiles={setPlacedTiles}
+          extractWordFromBoard={extractWordFromBoard}
+          isValidPlacement={isValidPlacement}
+          calculateWordScore={calculateWordScore}
+          refillRack={refillRack}
         >
           {({ playWord }) => (
-            <button className="play-button" onClick={playWord}>Play word</button>
+            <button className="play-button" onClick={playWord}>Submit Word</button>
           )}
         </WordValidator>
 
-        <button className="pass-button" onClick={handlePass}>PASS</button>
+        <button className="pass-button" onClick={() => {
+          setSelectedTile(null);
+          setPlacedTiles([]);
+          setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+        }}>
+          Pass
+        </button>
       </div>
     </div>
   );
